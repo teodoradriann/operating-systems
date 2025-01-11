@@ -15,41 +15,53 @@ int guard_let(int n, char *err)
 		perror(err);
 		exit(EXIT_FAILURE);
 	}
-
 	return n;
 }
 
 int create_socket(void)
 {
-	/* TODO: Implement create_socket(). */
-	return -1;
+	int server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+	struct sockaddr_un server_address;
+	server_address.sun_family = AF_UNIX;
+	snprintf(server_address.sun_path, sizeof(server_address.sun_path), "%s", SOCKET_NAME);
+	socklen_t slen = sizeof(server_address);
+	guard_let(
+		bind(server_socket, (struct sockaddr *) &server_address, slen),
+		"bind error"
+	);
+	guard_let(listen(server_socket, MAX_CLIENTS), "listen error");
+	return server_socket;
+
 }
 
 int connect_socket(int fd)
 {
-	/* TODO: Implement connect_socket(). */
-	return -1;
+	struct sockaddr_un server_address;
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sun_family = AF_UNIX;
+	strncpy(server_address.sun_path, SOCKET_NAME, sizeof(server_address.sun_path) - 1);
+	return guard_let(
+        connect(fd, (struct sockaddr*)&server_address, sizeof(server_address)),
+        "connect error"
+    );
 }
 
 ssize_t send_socket(int fd, const char *buf, size_t len)
 {
-	/* TODO: Implement send_socket(). */
-	return -1;
+	ssize_t bytes_sent = 0;
+	while (bytes_sent < len) {
+		ssize_t sent = send(fd, buf + bytes_sent, len - bytes_sent, 0);
+		bytes_sent += sent;
+	}
+	return bytes_sent;
 }
 
 ssize_t recv_socket(int fd, char *buf, size_t len)
 {
-	/* TODO: Implement recv_socket(). */
-	return guard_let(recv(fd, buf, len, 0), "recv failed.");
+	return guard_let(recv(fd, buf, len, 0), "recv error");
 }
 
 void close_socket(int fd)
 {
-	/* TODO: Implement close_socket(). */
-	// Stop reception and transmission
-	// int rez = shutdown(fd, 2);
-	// functie adi puternica pt `rez`
-
 	 guard_let(close(fd), "Error on close.");
-
 }
