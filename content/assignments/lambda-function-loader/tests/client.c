@@ -8,6 +8,7 @@
 
 int main(int argc, char *argv[])
 {
+	(void) server;
 	int fd = -1;
 	int ret = -1;
 

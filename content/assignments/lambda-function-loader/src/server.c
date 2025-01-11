@@ -200,6 +200,7 @@ int main(void)
 
 	printf("Server created\n");
 	guard_let(listen(server_socket, MAX_CLIENTS), "listen error");
+
 	printf("Server is listening on socket: %s\n", SOCKET_NAME);
 	struct lib lib;
 	int ret;
@@ -253,4 +254,6 @@ int main(void)
 	}
 	close_socket(server_socket);
 	printf("Connection closed.\n");
+
+	return 0;
 }
