@@ -52,6 +52,6 @@ ssize_t recv_socket(int fd, char *buf, size_t len)
 }
 
 void close_socket(int fd)
-{
+{	
 	guard_let(close(fd), "can't close the socket");
 }

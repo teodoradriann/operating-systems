@@ -9,7 +9,6 @@
 #define BUFSIZE 1024
 #define MAX_CLIENTS 1024
 #define SOCKET_NAME "/tmp/sohack.socket"
-static struct sockaddr_un *server;
 
 
 int create_socket(void);

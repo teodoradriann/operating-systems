@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
 
 	/* Send the command to the server. */
 	send_socket(fd, buf, strlen(buf));
+	//send_socket(fd, "hello", 5);
 
 	/* Wait for the response from the server. */
 	memset(buf, 0, BUFSIZE);

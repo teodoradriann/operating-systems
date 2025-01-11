@@ -77,6 +77,7 @@ static int lib_load(struct lib *lib)
 
 static int lib_execute(struct lib *lib)
 {
+	printf("AICI");
 	if (!lib || !lib->handle) {
         fprintf(stderr, "library not loaded.\n");
         return -1;
@@ -121,7 +122,6 @@ static int lib_execute(struct lib *lib)
 
     close(saved_stdout);
     close(fd);
-
 	return 0;
 }
 
@@ -132,11 +132,6 @@ static int lib_close(struct lib *lib)
 	if (lib->handle) {
 		dlclose(lib->handle);
 		lib->handle = NULL;
-	}
-
-	if (lib->outputfile) {
-		free(lib->outputfile);
-		lib->outputfile = NULL;
 	}
 
 	lib->run = NULL;
@@ -151,8 +146,6 @@ static int lib_posthooks(struct lib *lib)
         fprintf(stderr, "Error: No output file generated.\n");
         return -1;
     }
-
-	printf("%s\n", lib->outputfile);
 	return 0;
 }
 
@@ -182,7 +175,6 @@ static int lib_run(struct lib *lib)
 static int parse_command(const char *buf, char *name, char *func, char *params)
 {
 	int ret;
-
 	ret = sscanf(buf, "%s %s %s", name, func, params);
 	if (ret < 0)
 		return -1;
@@ -208,13 +200,15 @@ int main(void)
 
 	printf("Server created\n");
 	guard_let(listen(server_socket, MAX_CLIENTS), "listen error");
-	printf("...");
 
+	printf("Server is listening on socket: %s\n", SOCKET_NAME);
 	struct lib lib;
 	int ret;
+
 	while (1) {
 		int client;
 		client = accept(server_socket, NULL, NULL);
+		printf("Client %d acepted.\n", client);
 		if (client < 0) {
 			perror("can't connect to client");
 			continue;
@@ -224,30 +218,42 @@ int main(void)
 		size_t recv_buffer_len = 0;
 		memset(recv_buffer, 0, BUFSIZE);
 		ssize_t offset = 0;
-		while((offset = recv_socket(client, recv_buffer + recv_buffer_len, BUFSIZE)) > 0) {
+
+		//recv_socket(client, recv_buffer + recv_buffer_len, BUFSIZE);
+		while((offset = recv_socket(client, recv_buffer, BUFSIZE)) > 0) {
 			recv_buffer_len += offset;
-		}
+			printf("Received %zd bytes from client %d.\n", offset, client);
+			if (recv_buffer_len >= BUFSIZE - 1) {
+				printf("Buffer full, stopping reception.\n");
+				break;
+        	}
+			printf("Finished receiving data from client %d.\n", client);
+			recv_buffer[recv_buffer_len] = '\0';
+			printf("Received command: %s\n", recv_buffer);
 
-		printf("%s", recv_buffer);
+			char name[BUFSIZE];
+			char func[BUFSIZE];
+			char params[BUFSIZE];
+			memset(name, 0, BUFSIZE);
+			memset(func, 0, BUFSIZE);
+			memset(params, 0, BUFSIZE);
 
-		char name[BUFSIZE];
-		char func[BUFSIZE];
-		char params[BUFSIZE];
-		memset(name, 0, BUFSIZE);
-		memset(func, 0, BUFSIZE);
-		memset(params, 0, BUFSIZE);
-
-		parse_command(recv_buffer, name, func, params);
-		printf("%s\n%s\n%s\n", name, func, params);
-		memset(&lib, 0, sizeof(lib));
-		lib.libname = name;
-		lib.funcname = func;
-		lib.filename = params;
-		ret = lib_run(&lib);
-		if (ret < 0) {
-			break;
+			parse_command(recv_buffer, name, func, params);
+			memset(&lib, 0, sizeof(lib));
+			lib.libname = name;
+			lib.funcname = func;
+			lib.filename = params;
+			ret = lib_run(&lib);
+			if (ret < 0) {
+				fprintf(stderr, "lib_run encountered an error.\n");
+			} else {
+				send_socket(client, lib.outputfile, strlen(lib.outputfile));
+				close(client);
+			}
 		}
 	}
 	close_socket(server_socket);
+	printf("Connection closed.\n");
+
 	return 0;
 }
