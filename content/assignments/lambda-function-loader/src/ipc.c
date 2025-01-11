@@ -17,14 +17,12 @@ int guard_let(int n, char *err) {
 	return n;
 }
 
-char path[] = "so_socket";
-
 int create_socket(void)
 {
 	int server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
 	struct sockaddr_un server_address;
 	server_address.sun_family = AF_UNIX;
-	snprintf(server_address.sun_path, sizeof(server_address.sun_path), "%s", path);
+	snprintf(server_address.sun_path, sizeof(server_address.sun_path), "%s", SOCKET_NAME);
 	socklen_t slen = sizeof(server_address);
 	guard_let(
 		bind(server_socket, (struct sockaddr *) &server_address, slen),
@@ -40,7 +38,7 @@ int connect_socket(int fd)
 	struct sockaddr_un server_address;
 	memset(&server_address, 0, sizeof(server_address));
 	server_address.sun_family = AF_UNIX;
-	strncpy(server_address.sun_path, path, sizeof(server_address.sun_path) - 1);
+	strncpy(server_address.sun_path, SOCKET_NAME, sizeof(server_address.sun_path) - 1);
 	return guard_let(
         connect(fd, (struct sockaddr*)&server_address, sizeof(server_address)), 
         "connect error"
@@ -59,10 +57,10 @@ ssize_t send_socket(int fd, const char *buf, size_t len)
 
 ssize_t recv_socket(int fd, char *buf, size_t len)
 {
-	
+	return guard_let(recv(fd, buf, len, 0), "recv error");
 }
 
 void close_socket(int fd)
 {
-	
+	guard_let(close(fd), "can't close the socket");
 }
