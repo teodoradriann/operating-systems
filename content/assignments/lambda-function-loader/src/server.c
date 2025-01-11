@@ -26,7 +26,13 @@ static int lib_prehooks(struct lib *lib)
 		return -1;
 	}
 
-	dlerror();
+	return 0;
+}
+
+static int lib_load(struct lib *lib)
+{
+	if (!lib) return -1;
+
 	const char *func_to_load = lib->funcname ? lib->funcname : "run";
 	*(void **)(&lib->run) = dlsym(lib->handle, func_to_load);
 	char *error = dlerror();
@@ -46,16 +52,6 @@ static int lib_prehooks(struct lib *lib)
             return -1;
         }
     }
-	return 0;
-}
-
-static int lib_load(struct lib *lib)
-{
-	if (!lib) return -1;
-	if (lib_prehooks(lib) != 0) {
-		fprintf(stderr, "failed to load the lib %s\n", lib->libname);
-		return -1;
-	}
 
 	char *temp = strdup(OUTPUT_TEMPLATE);
     if (!temp) {

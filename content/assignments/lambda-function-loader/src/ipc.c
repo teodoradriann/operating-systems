@@ -29,7 +29,6 @@ int create_socket(void)
 		bind(server_socket, (struct sockaddr *) &server_address, slen),
 		"bind error"
 	);
-	guard_let(listen(server_socket, MAX_CLIENTS), "listen error");
 	return server_socket;
 }
 
