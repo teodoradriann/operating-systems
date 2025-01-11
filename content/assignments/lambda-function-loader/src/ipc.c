@@ -22,7 +22,7 @@ int guard_let(int n, char *err)
 int create_socket(void)
 {
 	int server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
-	struct sockaddr_un *server_address = (sockaddr_un *)malloc(sizeof(sockaddr_un));
+	struct sockaddr_un *server_address = (struct sockaddr_un *)malloc(sizeof(struct sockaddr_un));
 	server = server_address;
 	server_address->sun_family = AF_UNIX;
 	snprintf(server_address->sun_path, sizeof(server_address->sun_path), "%s", SOCKET_NAME);
@@ -36,14 +36,6 @@ int create_socket(void)
 
 int connect_socket(int fd)
 {
-<<<<<<< HEAD
-	struct sockaddr_un server_address;
-	memset(&server_address, 0, sizeof(server_address));
-	server_address.sun_family = AF_UNIX;
-	strncpy(server_address.sun_path, SOCKET_NAME, sizeof(server_address.sun_path) - 1);
-	return guard_let(
-        connect(fd, (struct sockaddr*)&server_address, sizeof(server_address)),
-=======
 	if (!server) {
         fprintf(stderr, "Error: server address is not initialized.\n");
         exit(EXIT_FAILURE);
@@ -51,7 +43,6 @@ int connect_socket(int fd)
 
     return guard_let(
         connect(fd, (struct sockaddr *)server, sizeof(struct sockaddr_un)),
->>>>>>> origin/main
         "connect error"
     );
 }
@@ -73,13 +64,10 @@ ssize_t recv_socket(int fd, char *buf, size_t len)
 
 void close_socket(int fd)
 {
-<<<<<<< HEAD
-	 guard_let(close(fd), "Error on close.");
-=======
 	if (server) {
         free(server);
         server = NULL;
     }
+
 	guard_let(close(fd), "can't close the socket");
->>>>>>> origin/main
 }
