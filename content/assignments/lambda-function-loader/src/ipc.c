@@ -9,6 +9,15 @@
 
 #include "ipc.h"
 
+int guard_let(int n, char *err)
+{
+	if (n==-1) {
+		perror(err);
+		exit(EXIT_FAILURE);
+	}
+
+	return n;
+}
 
 int create_socket(void)
 {
@@ -31,10 +40,16 @@ ssize_t send_socket(int fd, const char *buf, size_t len)
 ssize_t recv_socket(int fd, char *buf, size_t len)
 {
 	/* TODO: Implement recv_socket(). */
-	return -1;
+	return guard_let(recv(fd, buf, len, 0), "recv failed.");
 }
 
 void close_socket(int fd)
 {
 	/* TODO: Implement close_socket(). */
+	// Stop reception and transmission
+	// int rez = shutdown(fd, 2);
+	// functie adi puternica pt `rez`
+
+	 guard_let(close(fd), "Error on close.");
+
 }
