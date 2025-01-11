@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <sys/un.h>
+
 #include "ipc.h"
 #include "server.h"
 
@@ -83,14 +85,29 @@ static int parse_command(const char *buf, char *name, char *func, char *params)
 int main(void)
 {
 	/* TODO: Implement server connection. */
+	int server_socket = create_socket();
+	connect_socket(server_socket);
+
+	// listen pun serv in listen
+		// cu accept
+		// ...
+	// eventual un accept
+	struct sockaddr_un server_address;
+
 	int ret;
 	struct lib lib;
 
 	while (1) {
 		/* TODO - get message from client */
+		recv_socket();
+
 		/* TODO - parse message with parse_command and populate lib */
+		parse_command();
+		lib_run();
+
 		/* TODO - handle request from client */
 		ret = lib_run(&lib);
+		send_socket();
 	}
 
 	return 0;

@@ -18,6 +18,7 @@ int guard_let(int n, char *err)
 	return n;
 }
 
+
 int create_socket(void)
 {
 	int server_socket = socket(AF_UNIX, SOCK_STREAM, 0);
