@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -193,61 +192,62 @@ static int parse_command(const char *buf, char *name, char *func, char *params)
 
 int main(void)
 {
-	/* TODO: Implement server connection. */
-	int server_socket = create_socket();
-	listen(server_socket, MAX_CLIENTS);
+	unlink(SOCKET_NAME);
 
-	// listen pun serv in listen
-		// cu accept
-		// ...
-	// eventual un accept
+	int server_socket = guard_let(create_socket(), "error on creating socket");
 
+	struct sockaddr_un server_address;
+	server_address.sun_family = AF_UNIX;
+	snprintf(server_address.sun_path, sizeof(server_address.sun_path), "%s", SOCKET_NAME);
+	socklen_t slen = sizeof(server_address);
 
-	int ret;
+	guard_let(
+		bind(server_socket, (struct sockaddr *)&server_address, slen),
+		"bind error"
+	);
+
+	printf("Server created\n");
+	guard_let(listen(server_socket, MAX_CLIENTS), "listen error");
+	printf("...");
+
 	struct lib lib;
-
+	int ret;
 	while (1) {
 		int client;
-
-		client = accept(server_socket, server, NULL);
-
+		client = accept(server_socket, NULL, NULL);
 		if (client < 0) {
-			perror("Coudn't connect to client");
+			perror("can't connect to client");
 			continue;
 		}
 
-		while (1)
-		{
-			/* TODO - get message from client */
-			char recv_buffer[BUFSIZE];
-			memset(recv_buffer, 0, BUFSIZE);
-			recv_socket(server_socket, recv_buffer, BUFSIZE);
+		char recv_buffer[BUFSIZE];
+		size_t recv_buffer_len = 0;
+		memset(recv_buffer, 0, BUFSIZE);
+		ssize_t offset = 0;
+		while((offset = recv_socket(client, recv_buffer + recv_buffer_len, BUFSIZE)) > 0) {
+			recv_buffer_len += offset;
+		}
 
-			/* TODO - parse message with parse_command and populate lib */
-			char name[BUFSIZE];
-			memset(name, 0, BUFSIZE);
+		printf("%s", recv_buffer);
 
-			char func[BUFSIZE];
-			memset(func, 0, BUFSIZE);
+		char name[BUFSIZE];
+		char func[BUFSIZE];
+		char params[BUFSIZE];
+		memset(name, 0, BUFSIZE);
+		memset(func, 0, BUFSIZE);
+		memset(params, 0, BUFSIZE);
 
-			char params[BUFSIZE];
-			memset(params, 0, BUFSIZE);
-
-			parse_command(recv_buffer, name, func, params);
-
-			struct lib my_lib;
-			memset(&my_lib, 0, sizeof(lib));
-
-
-			my_lib.libname = name;
-			my_lib.funcname = func;
-			my_lib.filename = params;
-
-			/* TODO - handle request from client */
-			ret = lib_run(&my_lib);
+		parse_command(recv_buffer, name, func, params);
+		printf("%s\n%s\n%s\n", name, func, params);
+		memset(&lib, 0, sizeof(lib));
+		lib.libname = name;
+		lib.funcname = func;
+		lib.filename = params;
+		ret = lib_run(&lib);
+		if (ret < 0) {
+			break;
 		}
 	}
 	close_socket(server_socket);
-
 	return 0;
 }
